@@ -1,0 +1,531 @@
+
+---
+title: "Association Rules - Apriori"
+author: "BBDS"
+date: "12/21/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#######################################################################################################
+### Free memory Functions
+#######################################################################################################
+
+```{r}
+# Clear environment
+rm(list = ls()) 
+
+# Clear packSalarys
+# pacman::p_unload(rgl)
+
+# Clear plots
+# dev.off()  # But only if there IS a plot
+
+# Clear console
+cat("\014")  # ctrl+L
+
+```
+
+#######################################################################################################
+### Loading Data to RStudio
+######################################################################################################## 
+```{r}
+# install.packages(c("digest", "evaluate", "formatR", "highlight", "knitr", 
+#   "parser", "plyr", "Rcpp", "stringr"))
+```
+
+
+```{r}
+Trans = read.csv(file.choose(), header = FALSE)# Locate data file, summarize, attach
+```
+
+
+```{r}
+str(Trans) # structure
+
+names(Trans) # variable names
+attributes(Trans)
+attributes(Trans)[1]
+
+dim (Trans) # dimensions
+
+nrow(Trans) # number of observations
+dim (Trans)[1]
+
+ncol(Trans) # number of variables
+
+
+```
+
+```{r}
+summary(Trans)
+```
+
+
+#######################################################################################################
+### Find Duplicate records 
+#######################################################################################################
+
+```{r}
+duplicated(Trans)
+anyDuplicated(Trans)
+anyDuplicated(Trans, fromLast = TRUE)
+```
+
+#######################################################################################################
+## Data Preprocessing
+#######################################################################################################
+
+```{r}
+#install.packages('arules')
+
+library(arules)
+
+#read.transactions(file.choose())
+```
+
+
+
+```{r}
+Trans2 = read.transactions(file.choose(), sep = ',', rm.duplicates = TRUE)
+
+```
+
+```{r}
+summary(Trans2)
+```
+
+
+
+```{r}
+#itemFrequencyPlot()
+itemFrequencyPlot(Trans2, topN = 10)
+```
+
+
+#######################################################################################################
+## Training Apriori on the Trans
+#######################################################################################################
+
+```{r}
+(3*7)/7500
+```
+
+
+```{r}
+rules = apriori(data = Trans2, parameter = list(support = 0.004, confidence = 0.2))
+```
+
+
+
+#######################################################################################################
+## Inspecting the results
+#######################################################################################################
+
+```{r}
+# read.transactions()
+# itemFrequencyPlot()
+# 
+# inspect()
+
+inspect(sort(rules, by = 'confidence')[1:200])
+```
+
+```{r}
+#Alternative to inspect() is to convert rules to a dataframe and then use View()
+df_basket <- as(rules,"data.frame")
+View(df_basket)
+```
+
+#######################################################################################################
+## Graphical Representation
+#######################################################################################################
+
+```{r}
+library(arulesViz)
+```
+
+
+Plot a few graphs that can help you visualize the rules. Install and load the ‘arulesViz’ library for association rules specific visualizations:
+
+Moving forward in the visualisation, we can use a graph to highlight the support and lifts of various items in our repository but mostly to see which product is associated with which one in the sales environment.
+
+This representation gives us a graph model of items in our dataset.
+
+The size of graph nodes is based on support levels and the colour on lift ratios. The incoming lines show the Antecedants or the LHS and the RHS is represented by names of items. 
+
+```{r}
+plot(rules, method="graph", control=list(type="items"))
+
+```
+
+The above graph shows us that most of our transactions were consolidated around “Whole Milk”.
+
+We also see that all liquor and wine are very strongly associated so we must place these together.
+
+Another association we see from this graph is that the people who buy tropical fruits and herbs also buy rolls and buns. We should place these in an aisle together.
+
+
+```{r}
+# plot(rules[1:20], measure=c("support","lift"),shading="confidence",engine='interactive')
+```
+
+
+## Interactive Scatterplot
+These plots show us each and every rule visualised into a form of a scatterplot. The confidence levels are plotted on the Y axis and Support levels on the X axis for each rule. We can hover over them in our interactive plot to see the rule.
+
+```{r}
+# arulesViz::plotly_arules(rules)
+```
+
+
+# Filter rules with confidence greater than 0.4 or 40%
+
+```{r}
+subRules<-rules[quality(rules)$confidence>0.4]
+
+#Plot SubRules
+plot(subRules)
+```
+The above plot shows that rules with high lift have low support. You can use the following options
+
+```{r}
+plot(subRules,method="two-key plot")
+```
+
+The two-key plot uses support and confidence on x and y-axis respectively. It uses order for coloring. The order is the number of items in the rule.
+
+```{r}
+# plotly_arules(subRules)
+```
+
+
+# graph-Based Visualizations
+
+Graph-based techniques visualize association rules using vertices and edges where vertices are labeled with item names, and item sets or rules are represented as a second set of vertices. Items are connected with item-sets/rules using directed arrows. Arrows pointing from items to rule vertices indicate LHS items and an arrow from a rule to an item indicates the RHS. The size and color of vertices often represent interest measures.
+
+Graph plots are a great way to visualize rules but tend to become congested as the number of rules increases. So it is better to visualize less number of rules with graph-based visualizations.
+
+# Let's select 10 rules from subRules having the highest confidence.
+
+```{r}
+top10subRules <- head(subRules, n = 10, by = "confidence")
+```
+
+Now, plot an interactive graph:
+
+Note: You can make all your plots interactive using engine=htmlwidget parameter in plot
+
+```{r}
+# plot(top10subRules, method = "graph",  engine = "htmlwidget")
+```
+
+```{r}
+# saveAsGraph(head(subRules, n = 1000, by = "lift"), file = "rules.graphml")
+```
+
+
+## Individual Rule Representation
+This representation is also called as Parallel Coordinates Plot. It is useful to visualized which products along with which items cause what kind of sales.
+
+As mentioned above, the RHS is the Consequent or the item we propose the customer will buy; the positions are in the LHS where 2 is the most recent addition to our basket and 1 is the item we previously had.
+
+
+```{r}
+# Filter top 20 rules with highest lift
+subRules2<-head(subRules, n=20, by="lift")
+plot(subRules2, method="paracoord")
+```
+
+
+```{r}
+plot(rules, method = "grouped", control = list(k = 5))
+
+```
+
+
+```{r}
+# data(Groceries)
+```
+
+```{r}
+# rules <- apriori(Trans, parameter=list(support=0.001, confidence=0.2))
+# rules
+rules
+```
+
+
+## Scatterplot
+## -----------
+
+```{r}
+plot(rules)
+```
+
+
+## Scatterplot with custom colors
+
+```{r}
+library(colorspace) # for sequential_hcl
+plot(rules, control = list(col=sequential_hcl(100)))
+plot(rules, col=sequential_hcl(100))
+plot(rules, col=grey.colors(50, alpha =.8))
+```
+
+
+## Scatterplot with custom measures
+
+```{r}
+plot(rules, measure = c("support", "lift"), shading = "confidence", jitter = 2)
+```
+
+## See all control options using verbose
+
+```{r}
+plot(rules, verbose = TRUE, jitter = 0)
+```
+
+
+## Use engine ggplot2
+```{r}
+library(ggplot2)
+plot(rules, engine = "ggplot2")
+plot(rules, engine = "ggplot2") +
+scale_color_gradient2(low = "red", mid = "white", high = "blue",
+midpoint = 1, limits = c(0,12)) +
+ggtitle("Scatterplot") +
+theme_linedraw()
+```
+
+
+## Interactive plot (selected rules are returned)
+
+```{r}
+# sel <- plot(rules, engine = "interactive")
+```
+
+## Create a html widget for interactive visualization
+
+```{r}
+# plot(rules, engine = "htmlwidget", jitter = 200)
+```
+
+## Two-key plot (is a scatterplot with shading = "order")
+
+```{r}
+plot(rules, method = "two-key plot", jitter = 0)
+```
+
+
+## Matrix shading
+## --------------
+## The following techniques work better with fewer rules
+
+```{r}
+subrules <- subset(rules, lift>3)
+subrules
+```
+
+
+## 2D matrix with shading
+
+```{r}
+#plot 7
+plot(subrules, method="matrix")
+```
+
+
+## 3D matrix
+
+```{r}
+plot(subrules, method="matrix", engine = "3d")
+```
+
+
+## Matrix with two measures
+
+```{r}
+plot(subrules, method="matrix", shading=c("lift", "confidence"))
+```
+
+
+## Reorder rules
+
+```{r}
+plot(subrules, method="matrix", control = list(reorder = "none"))
+plot(subrules, method="matrix", control = list(reorder = "support/confidence"))
+plot(subrules, method="matrix", control = list(reorder = "similarity"))
+```
+
+
+## Interactive matrix plot (default interactive and as a html widget)
+
+```{r}
+plot(subrules, method="matrix", engine="interactive")
+plot(subrules, method="matrix", engine="htmlwidget")
+```
+
+## ggplot2 matrix plot
+
+```{r}
+plot(subrules, method="matrix", engine = "ggplot2") +
+theme_linedraw()
+```
+
+
+## Grouped matrix plot
+## -------------------
+
+```{r}
+plot(rules, method="grouped matrix")
+plot(rules, method="grouped matrix",
+col = grey.colors(10),
+gp_labels = grid::gpar(col = "blue", cex=1, fontface="italic"))
+```
+
+
+## Interactive grouped matrix plot
+
+```{r}
+# sel <- plot(rules, method="grouped", engine = "interactive")
+```
+
+
+## End(Not run)
+## Graphs
+## ------
+## Graphs only work well with very few rules
+
+```{r}
+subrules2 <- sample(subrules, 25)
+plot(subrules2, method="graph")
+```
+
+
+## Custom colors
+
+```{r}
+plot(subrules2, method="graph",
+nodeCol = grey.colors(10), edgeCol = grey(.7), alpha = 1)
+```
+
+
+## no shading for lift, set node color to grey and add
+## labels for support
+
+```{r}
+plot(subrules2, method="graph", shading = NA, nodeCol = grey(.5), measureLabels = TRUE)
+```
+
+
+## use plot_options to alter any aspect of the graph
+ 
+## (see: https://igraph.org/r/doc/plot.common.html)
+
+```{r}
+plot(subrules2, method="graph",
+plot_options = list(
+edge.lty = 2,
+vertex.label.cex = .6,
+margin = c(.1,.1,.1,.1),
+asp = .5))
+```
+
+
+## igraph layout generators can be used (see ? igraph::layout_)
+
+```{r}
+plot(subrules2, method="graph", layout=igraph::in_circle())
+plot(subrules2, method="graph",
+layout=igraph::with_graphopt(spring.const=5, mass=50))
+```
+
+
+## Graph rendering using Graphviz
+## Not run:
+
+```{r}
+#install.packages("BiocManager")
+#BiocManager::install("Rgraphviz")
+plot(subrules2, method="graph", engine="graphviz")
+```
+
+
+## End(Not run)
+## Default interactive plot (using igraph's tkplot)
+## Not run:
+
+```{r}
+plot(subrules2, method="graph", engine = "interactive")
+```
+
+
+## End(Not run)
+## Interactive graph as a html widget (using igraph layout)
+## Not run:
+
+```{r}
+# install.packages('htmlwidgets', repos=NULL, type = "source")
+# plot(subrules2, method="graph", engine="htmlwidget")
+# plot(subrules2, method="graph", engine="htmlwidget",
+# igraphLayout = "layout_in_circle")
+```
+
+
+## End(Not run)
+## Parallel coordinates plot
+## -------------------------
+
+```{r}
+plot(subrules2, method="paracoord")
+plot(subrules2, method="paracoord", control = list(reorder=TRUE))
+```
+
+
+## Doubledecker plot
+## -----------------
+## Note: only works for a single rule
+
+```{r}
+oneRule <- sample(rules, 1)
+inspect(oneRule)
+plot(oneRule, method="doubledecker", data = Groceries)
+```
+
+
+## Itemsets
+## --------
+
+```{r}
+itemsets <- eclat(Groceries, parameter = list(support = 0.02, minlen=2))
+plot(itemsets)
+plot(itemsets, method="graph")
+plot(itemsets, method="paracoord", alpha=.5, reorder=TRUE)
+#ruleExplorer 9
+```
+
+
+## Add more quality measures to use for the scatterplot
+## ----------------------------------------------------
+
+```{r}
+quality(itemsets) <- interestMeasure(itemsets, trans=Groceries)
+head(quality(itemsets))
+plot(itemsets, measure=c("support", "allConfidence"), shading="lift")
+```
+
+
+## Save HTML widget as web page
+## ----------------------------
+
+```{r}
+# p <- plot(rules, engine = "html")
+# htmlwidgets::saveWidget(p, "arules.html", selfcontained = FALSE)
+# browseURL("arules.html")
+```
+
+
+# Note: selfcontained seems to make the browser slow.
