@@ -42,6 +42,15 @@ Coming back to our Burger and Ketchup problem, the Lift(Burger -> Ketchup) can b
 Lift basically tells us that the likelihood of buying a Burger and Ketchup together is 3.33 times more than the likelihood of just buying the ketchup. A Lift of 1 means there is no association between products A and B. Lift of greater than 1 means products A and B are more likely to be bought together. Finally, Lift of less than 1 refers to the case where two products are unlikely to be bought together.
 ![image](https://user-images.githubusercontent.com/92646311/205537798-e64a4bf7-923d-47da-bafb-414cd8895e15.png)
 
+### assosiation_Rules
+
+![image](https://user-images.githubusercontent.com/92646311/205549346-cb3444b0-53fb-4fea-9f48-e24d254639bd.png)
+
+Numbers of rules 
+![image](https://user-images.githubusercontent.com/92646311/205550458-545000bc-f4d9-42c2-af7d-3b114d4394cb.png)
+
+
+
 
 # R
 
