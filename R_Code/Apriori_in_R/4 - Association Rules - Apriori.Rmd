@@ -1,8 +1,8 @@
 
 ---
-title: "Association Rules - Apriori"
-author: "BBDS"
-date: "12/21/2019"
+title: "Association Rules_Apriori"
+author: "Saba"
+date: "11/30/2022"
 output: html_document
 ---
 
@@ -116,7 +116,7 @@ itemFrequencyPlot(Trans2, topN = 10)
 
 
 ```{r}
-rules = apriori(data = Trans2, parameter = list(support = 0.004, confidence = 0.2))
+rules = apriori(data = Trans2, parameter = list(support = 0.001, confidence = 0.04))
 ```
 
 
@@ -143,6 +143,10 @@ View(df_basket)
 #######################################################################################################
 ## Graphical Representation
 #######################################################################################################
+```{r}
+#install.packages("arulesViz")
+
+```
 
 ```{r}
 library(arulesViz)
@@ -213,6 +217,7 @@ Graph plots are a great way to visualize rules but tend to become congested as t
 
 ```{r}
 top10subRules <- head(subRules, n = 10, by = "confidence")
+top10subRules
 ```
 
 Now, plot an interactive graph:
